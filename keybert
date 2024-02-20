@@ -1,0 +1,36 @@
+!pip install keybert
+
+from google.colab import drive
+drive.mount("/content/gdrive")
+%cd /content/gdrive/MyDrive/WAW
+
+import pandas as pd
+df=pd.read_excel('/content/gdrive/MyDrive/summarized_data.xlsx')
+summary=df['Summary']
+
+from keybert import KeyBERT
+from collections import Counter
+import pandas as pd
+
+kw_model = KeyBERT()
+
+# keyword function
+def generate_keyword(text):
+    keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(2, 4), use_maxsum=True, top_n=1)
+    return keywords
+
+# 키워드 추출
+keywords = [generate_keyword(text)[0][0].split() for text in summary]
+
+all_keywords = [keyword for sublist in keywords for keyword in sublist]
+keyword_counts = Counter(all_keywords)
+
+
+# 결과를 데이터프레임으로 변환
+df_counts = pd.DataFrame(list(keyword_counts.items()), columns=['Keyword', 'Count'])
+
+# 중복된 키워드가 많은 순서로 정렬
+df_counts = df_counts.sort_values(by='Count', ascending=False)
+
+df['keywords']=keywords
+df.to_excel('/content/gdrive/MyDrive/for_find.xlsx', index=False)
